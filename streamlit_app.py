@@ -3,6 +3,7 @@ import google.generativeai as genai
 import pandas as pd
 import numpy as np
 from PyPDF2 import PdfReader
+import io
 
 # Configure the API key securely from Streamlit's secrets
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
@@ -70,6 +71,38 @@ def perform_valuation_analysis(financial_data):
     except Exception as e:
         st.error(f"Error performing valuation analysis: {e}")
         return None
+
+# Function to generate and provide the template for financial data (CSV format)
+def generate_financial_template():
+    # Create a template with predefined columns for financial data
+    data = {
+        'Year': [2022, 2023, 2024, 2025],
+        'Revenue': [0, 0, 0, 0],
+        'Expense': [0, 0, 0, 0],
+        'EBITDA': [0, 0, 0, 0],
+        'Net Income': [0, 0, 0, 0],
+    }
+    df = pd.DataFrame(data)
+    
+    # Convert the dataframe to CSV format
+    csv_file = df.to_csv(index=False)
+    
+    # Create a BytesIO buffer to allow downloading
+    buffer = io.StringIO(csv_file)
+    return buffer
+
+# Display the financial data template download link
+st.subheader("Download Financial Data Template")
+st.write("You can download the financial data template in CSV format and fill in your company's financial details.")
+template_buffer = generate_financial_template()
+
+# Provide the download button for the CSV template
+st.download_button(
+    label="Download Financial Template (CSV)",
+    data=template_buffer.getvalue(),
+    file_name="financial_template.csv",
+    mime="text/csv"
+)
 
 # Display the analysis results
 if pitchdeck_file is not None:
