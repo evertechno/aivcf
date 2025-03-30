@@ -58,7 +58,7 @@ def extract_financial_data(file):
             return pd.read_excel(file, engine='openpyxl')
         elif file.type == "application/vnd.ms-excel":  # .xls file
             return pd.read_excel(file, engine='xlrd')
-        elif file.type == "text/csv":
+        elif file.type == "text/csv":  # CSV file
             return pd.read_csv(file)
         else:
             raise ValueError("Unsupported file type. Please upload a CSV or Excel file.")
