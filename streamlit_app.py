@@ -54,14 +54,14 @@ def extract_financial_data(file):
     """Extracts data from an Excel or CSV file."""
     try:
         # Check the file extension and specify the appropriate engine
-        if file.type == "application/vnd.ms-excel" or file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-            # For Excel, we specify 'openpyxl' for .xlsx files
+        if file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":  # .xlsx file
             return pd.read_excel(file, engine='openpyxl')
-        elif file.type == "application/vnd.ms-excel":
-            # For older .xls files, use xlrd (older Excel format)
+        elif file.type == "application/vnd.ms-excel":  # .xls file
             return pd.read_excel(file, engine='xlrd')
         elif file.type == "text/csv":
             return pd.read_csv(file)
+        else:
+            raise ValueError("Unsupported file type. Please upload a CSV or Excel file.")
     except Exception as e:
         st.error(f"Error in file processing: {e}")
         return None
