@@ -53,15 +53,19 @@ def extract_pdf_text(file):
 def extract_financial_data(file):
     """Extracts data from an Excel or CSV file."""
     try:
-        # Check the file extension and specify the appropriate engine
-        if file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":  # .xlsx file
+        # If the file is a CSV file, use pandas.read_csv
+        if file.type == "text/csv":
+            return pd.read_csv(file)
+        
+        # If the file is an Excel file, use pandas.read_excel with the appropriate engine
+        elif file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":  # .xlsx file
             return pd.read_excel(file, engine='openpyxl')
         elif file.type == "application/vnd.ms-excel":  # .xls file
             return pd.read_excel(file, engine='xlrd')
-        elif file.type == "text/csv":  # CSV file
-            return pd.read_csv(file)
+        
         else:
             raise ValueError("Unsupported file type. Please upload a CSV or Excel file.")
+    
     except Exception as e:
         st.error(f"Error in file processing: {e}")
         return None
