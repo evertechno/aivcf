@@ -3,7 +3,6 @@ import google.generativeai as genai
 import pandas as pd
 import PyPDF2
 import io
-from pptx import Presentation
 
 # Configure the API key securely from Streamlit's secrets
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
@@ -13,7 +12,7 @@ st.title("AI-Powered Pitch Deck and Financial Analysis")
 st.write("Upload the pitch deck and financial statements, and get a robust analysis with valuation insights and scoring.")
 
 # File uploader for pitch deck and financial statements
-uploaded_pitch_deck = st.file_uploader("Upload the Pitch Deck (PDF, PPT)", type=["pdf", "ppt", "pptx"])
+uploaded_pitch_deck = st.file_uploader("Upload the Pitch Deck (PDF)", type=["pdf"])
 uploaded_financials = st.file_uploader("Upload the Financial Statements (CSV, Excel)", type=["csv", "xlsx"])
 
 # Extract text from PDF
@@ -23,17 +22,6 @@ def extract_pdf_text(file):
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text()
-    return text
-
-# Extract text from PPTX
-def extract_pptx_text(file):
-    """Extracts text from a PowerPoint file."""
-    prs = Presentation(file)
-    text = ""
-    for slide in prs.slides:
-        for shape in slide.shapes:
-            if hasattr(shape, "text"):
-                text += shape.text
     return text
 
 # Extract data from Excel or CSV
@@ -51,8 +39,6 @@ financial_data = None
 if uploaded_pitch_deck:
     if uploaded_pitch_deck.type == "application/pdf":
         pitch_deck_text = extract_pdf_text(uploaded_pitch_deck)
-    elif uploaded_pitch_deck.type in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
-        pitch_deck_text = extract_pptx_text(uploaded_pitch_deck)
 
 if uploaded_financials:
     financial_data = extract_financial_data(uploaded_financials)
@@ -129,4 +115,3 @@ if uploaded_pitch_deck and uploaded_financials:
     st.download_button("Download Analysis Report", csv_report, "pitch_deck_analysis_report.csv", "text/csv")
 else:
     st.write("Please upload both the pitch deck and financial statements to get started.")
-
