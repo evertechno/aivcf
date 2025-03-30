@@ -99,25 +99,32 @@ if financial_file is not None:
 # Final report generation
 if st.button("Generate Report"):
     try:
-        pitchdeck_text = extract_pitchdeck_info(pitchdeck_file)
-        pitchdeck_analysis = analyze_pitchdeck(pitchdeck_text) if pitchdeck_text else "No pitch deck analysis available."
-        
-        financial_data = pd.read_csv(financial_file) if financial_file.name.endswith('.csv') else pd.read_excel(financial_file)
-        valuation_result = perform_valuation_analysis(financial_data)
-        
-        # Combine everything into the final report
-        report = f"""
-        ## Venture Capital Evaluation Report:
+        # Ensure that both files are uploaded before proceeding
+        if pitchdeck_file is None:
+            st.error("Please upload a pitch deck (PDF) file.")
+        elif financial_file is None:
+            st.error("Please upload a financial statement (CSV/Excel) file.")
+        else:
+            # Proceed with extracting and analyzing data only if files are uploaded
+            pitchdeck_text = extract_pitchdeck_info(pitchdeck_file)
+            pitchdeck_analysis = analyze_pitchdeck(pitchdeck_text) if pitchdeck_text else "No pitch deck analysis available."
+            
+            financial_data = pd.read_csv(financial_file) if financial_file.name.endswith('.csv') else pd.read_excel(financial_file)
+            valuation_result = perform_valuation_analysis(financial_data)
+            
+            # Combine everything into the final report
+            report = f"""
+            ## Venture Capital Evaluation Report:
 
-        ### 1. Pitch Deck Analysis:
-        {pitchdeck_analysis}
+            ### 1. Pitch Deck Analysis:
+            {pitchdeck_analysis}
 
-        ### 2. Financial Valuation:
-        {valuation_result}
+            ### 2. Financial Valuation:
+            {valuation_result}
 
-        ### 3. Overall Evaluation:
-        Based on the pitch deck and financial statements, the startup shows strong potential for growth. The valuation suggests a promising future, but further detailed analysis and market conditions should be considered.
-        """
-        st.text(report)
+            ### 3. Overall Evaluation:
+            Based on the pitch deck and financial statements, the startup shows strong potential for growth. The valuation suggests a promising future, but further detailed analysis and market conditions should be considered.
+            """
+            st.text(report)
     except Exception as e:
         st.error(f"Error generating final report: {e}")
