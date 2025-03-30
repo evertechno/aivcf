@@ -15,6 +15,31 @@ st.write("Upload the pitch deck and financial statements, and get a robust analy
 uploaded_pitch_deck = st.file_uploader("Upload the Pitch Deck (PDF)", type=["pdf"])
 uploaded_financials = st.file_uploader("Upload the Financial Statements (CSV, Excel)", type=["csv", "xlsx"])
 
+# Button to download the template
+def create_financial_template():
+    """Creates a sample financial template for download."""
+    # Example financial data template in Excel format (you can adjust this structure as needed)
+    data = {
+        "Year": [2021, 2022, 2023],
+        "Revenue": [0, 0, 0],  # Placeholder values
+        "Cost of Goods Sold": [0, 0, 0],
+        "Gross Profit": [0, 0, 0],
+        "Operating Expenses": [0, 0, 0],
+        "Net Income": [0, 0, 0],
+        "Free Cash Flow": [0, 0, 0]
+    }
+
+    df = pd.DataFrame(data)
+    return df
+
+# Download the financial statement template
+st.subheader("Download Financial Statement Template")
+template_df = create_financial_template()
+csv_template = template_df.to_csv(index=False)
+
+# Provide a button to download the CSV template
+st.download_button("Download Template (CSV)", csv_template, "financial_statement_template.csv", "text/csv")
+
 # Extract text from PDF
 def extract_pdf_text(file):
     """Extracts text from a PDF file."""
