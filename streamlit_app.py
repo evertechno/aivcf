@@ -13,7 +13,7 @@ st.write("Upload the pitch deck and financial statements, and get a robust analy
 
 # File uploader for pitch deck and financial statements
 uploaded_pitch_deck = st.file_uploader("Upload the Pitch Deck (PDF)", type=["pdf"])
-uploaded_financials = st.file_uploader("Upload the Financial Statements (CSV, Excel)", type=["csv", "xlsx"])
+uploaded_financials = st.file_uploader("Upload the Financial Statements (CSV, Excel)", type=["csv", "xlsx", "xls"])
 
 # Button to download the template
 def create_financial_template():
@@ -52,10 +52,19 @@ def extract_pdf_text(file):
 # Extract data from Excel or CSV
 def extract_financial_data(file):
     """Extracts data from an Excel or CSV file."""
-    if file.type == "application/vnd.ms-excel" or file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-        return pd.read_excel(file)
-    elif file.type == "text/csv":
-        return pd.read_csv(file)
+    try:
+        # Check the file extension and specify the appropriate engine
+        if file.type == "application/vnd.ms-excel" or file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            # For Excel, we specify 'openpyxl' for .xlsx files
+            return pd.read_excel(file, engine='openpyxl')
+        elif file.type == "application/vnd.ms-excel":
+            # For older .xls files, use xlrd (older Excel format)
+            return pd.read_excel(file, engine='xlrd')
+        elif file.type == "text/csv":
+            return pd.read_csv(file)
+    except Exception as e:
+        st.error(f"Error in file processing: {e}")
+        return None
 
 # Process the uploaded files
 pitch_deck_text = ""
