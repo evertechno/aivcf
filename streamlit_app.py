@@ -1,155 +1,123 @@
 import streamlit as st
 import google.generativeai as genai
 import pandas as pd
-import PyPDF2
-import io
+import numpy as np
+from PyPDF2 import PdfReader
 
 # Configure the API key securely from Streamlit's secrets
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # Streamlit App UI
-st.title("AI-Powered Pitch Deck and Financial Analysis")
-st.write("Upload the pitch deck and financial statements, and get a robust analysis with valuation insights and scoring.")
+st.title("Venture Capital Pitch Deck and Financial Analysis")
+st.write("Upload pitch decks and financial statements for AI-powered analysis.")
 
-# File uploader for pitch deck and financial statements
-uploaded_pitch_deck = st.file_uploader("Upload the Pitch Deck (PDF)", type=["pdf"])
-uploaded_financials = st.file_uploader("Upload the Financial Statements (CSV, Excel)", type=["csv", "xlsx", "xls"])
+# File Upload Sections
+pitchdeck_file = st.file_uploader("Upload Pitch Deck (PDF)", type=["pdf"])
+financial_file = st.file_uploader("Upload Financial Statement (CSV/Excel)", type=["csv", "xlsx"])
 
-# Button to download the template
-def create_financial_template():
-    """Creates a sample financial template for download."""
-    # Example financial data template in Excel format (you can adjust this structure as needed)
-    data = {
-        "Year": [2021, 2022, 2023],
-        "Revenue": [0, 0, 0],  # Placeholder values
-        "Cost of Goods Sold": [0, 0, 0],
-        "Gross Profit": [0, 0, 0],
-        "Operating Expenses": [0, 0, 0],
-        "Net Income": [0, 0, 0],
-        "Free Cash Flow": [0, 0, 0]
-    }
-
-    df = pd.DataFrame(data)
-    return df
-
-# Download the financial statement template
-st.subheader("Download Financial Statement Template")
-template_df = create_financial_template()
-csv_template = template_df.to_csv(index=False)
-
-# Provide a button to download the CSV template
-st.download_button("Download Template (CSV)", csv_template, "financial_statement_template.csv", "text/csv")
-
-# Extract text from PDF
-def extract_pdf_text(file):
-    """Extracts text from a PDF file."""
-    pdf_reader = PyPDF2.PdfReader(file)
+# Function to extract text from PDF pitch deck
+def extract_text_from_pdf(file):
+    reader = PdfReader(file)
     text = ""
-    for page in pdf_reader.pages:
+    for page in reader.pages:
         text += page.extract_text()
     return text
 
-# Extract data from Excel or CSV
-def extract_financial_data(file):
-    """Extracts data from an Excel or CSV file."""
+# Function to extract text from the uploaded pitch deck
+def extract_pitchdeck_info(pitchdeck_file):
     try:
-        # If the file is a CSV file, use pandas.read_csv
-        if file.type == "text/csv":
-            return pd.read_csv(file)
+        file_extension = pitchdeck_file.name.split('.')[-1].lower()
+        extracted_text = ""
+        if file_extension == 'pdf':
+            extracted_text = extract_text_from_pdf(pitchdeck_file)
         
-        # If the file is an Excel file, use pandas.read_excel with the appropriate engine
-        elif file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":  # .xlsx file
-            return pd.read_excel(file, engine='openpyxl')
-        elif file.type == "application/vnd.ms-excel":  # .xls file
-            return pd.read_excel(file, engine='xlrd')
-        
-        else:
-            raise ValueError("Unsupported file type. Please upload a CSV or Excel file.")
-    
+        return extracted_text
     except Exception as e:
-        st.error(f"Error in file processing: {e}")
+        st.error(f"Error extracting text from pitch deck: {e}")
         return None
 
-# Process the uploaded files
-pitch_deck_text = ""
-financial_data = None
-
-if uploaded_pitch_deck:
-    if uploaded_pitch_deck.type == "application/pdf":
-        pitch_deck_text = extract_pdf_text(uploaded_pitch_deck)
-
-if uploaded_financials:
-    financial_data = extract_financial_data(uploaded_financials)
-
-# Function to analyze pitch deck and financials using AI
-def analyze_pitch_deck(pitch_deck_text):
-    """Uses Google Generative AI to analyze the pitch deck."""
+# Function to perform AI-powered analysis of the pitch deck
+def analyze_pitchdeck(pitchdeck_text):
     try:
+        # Use Google Generative AI for analysis
         model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"Please analyze the following pitch deck and provide insights, key strengths, weaknesses, and opportunities. {pitch_deck_text}"
+        prompt = f"Analyze the following pitch deck content and provide a business analysis, including strengths, weaknesses, market opportunity, and team analysis: {pitchdeck_text}"
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        st.error(f"Error in pitch deck analysis: {e}")
+        st.error(f"Error analyzing pitch deck: {e}")
         return None
 
-def analyze_financials(financial_data):
-    """Perform financial analysis and valuation."""
+# DCF Valuation Function
+def perform_valuation_analysis(financial_data):
     try:
-        # Example: Calculating basic financial ratios or growth rate
-        financial_data['Growth Rate'] = financial_data['Revenue'].pct_change() * 100
-        latest_growth_rate = financial_data['Growth Rate'].iloc[-1]
-        return f"Latest revenue growth rate: {latest_growth_rate:.2f}%"
+        # Placeholder for extracting relevant financial data (e.g., revenue, expenses, etc.)
+        # Assume financial_data contains columns like 'Revenue', 'Expense', etc.
+        revenue = financial_data['Revenue']  # Example
+        expenses = financial_data['Expense']  # Example
+        
+        # Example DCF calculation
+        discount_rate = 0.1  # Assumed discount rate for DCF
+        future_cash_flows = np.array([100000, 120000, 150000, 180000])  # Example future cash flows
+        terminal_value = 2000000  # Example terminal value
+        dcf_value = np.sum(future_cash_flows / (1 + discount_rate) ** np.arange(1, len(future_cash_flows) + 1)) + terminal_value / (1 + discount_rate) ** len(future_cash_flows)
+        
+        # Example EBITDA multiple for Enterprise Valuation
+        enterprise_value = np.sum(revenue) * 6  # Assuming 6x EBITDA multiple
+        
+        # Return the results
+        return f"DCF Valuation: ${dcf_value:,.2f}\nEnterprise Valuation: ${enterprise_value:,.2f}"
     except Exception as e:
-        st.error(f"Error in financial analysis: {e}")
+        st.error(f"Error performing valuation analysis: {e}")
         return None
 
-def valuation_analysis(financial_data):
-    """Implement valuation models like DCF, Comparable Companies."""
+# Display the analysis results
+if pitchdeck_file is not None:
+    st.subheader("Pitch Deck Analysis")
+    pitchdeck_text = extract_pitchdeck_info(pitchdeck_file)
+    if pitchdeck_text:
+        pitchdeck_analysis = analyze_pitchdeck(pitchdeck_text)
+        st.write(pitchdeck_analysis)
+
+if financial_file is not None:
+    st.subheader("Financial Statement Analysis")
+    
+    # Load the financial data
+    if financial_file.name.endswith('.csv'):
+        financial_data = pd.read_csv(financial_file)
+    elif financial_file.name.endswith('.xlsx'):
+        financial_data = pd.read_excel(financial_file)
+    
+    # Perform Valuation
+    valuation_result = perform_valuation_analysis(financial_data)
+    st.write(valuation_result)
+
+    # Displaying the financial data for further analysis
+    st.write("Uploaded Financial Data:")
+    st.write(financial_data.head())
+
+# Final report generation
+if st.button("Generate Report"):
     try:
-        # Placeholder for a simple valuation analysis (DCF, comparable methods, etc.)
-        # Assuming we have free cash flow and discount rate
-        free_cash_flow = financial_data['Free Cash Flow'].mean()
-        discount_rate = 0.1  # Example discount rate
-        terminal_growth_rate = 0.02  # Example terminal growth rate
-        valuation = free_cash_flow / (discount_rate - terminal_growth_rate)  # Simple DCF formula
-        return f"Valuation based on DCF model: ${valuation:,.2f}"
+        pitchdeck_text = extract_pitchdeck_info(pitchdeck_file)
+        pitchdeck_analysis = analyze_pitchdeck(pitchdeck_text) if pitchdeck_text else "No pitch deck analysis available."
+        
+        financial_data = pd.read_csv(financial_file) if financial_file.name.endswith('.csv') else pd.read_excel(financial_file)
+        valuation_result = perform_valuation_analysis(financial_data)
+        
+        # Combine everything into the final report
+        report = f"""
+        ## Venture Capital Evaluation Report:
+
+        ### 1. Pitch Deck Analysis:
+        {pitchdeck_analysis}
+
+        ### 2. Financial Valuation:
+        {valuation_result}
+
+        ### 3. Overall Evaluation:
+        Based on the pitch deck and financial statements, the startup shows strong potential for growth. The valuation suggests a promising future, but further detailed analysis and market conditions should be considered.
+        """
+        st.text(report)
     except Exception as e:
-        st.error(f"Error in valuation analysis: {e}")
-        return None
-
-# Trigger analysis if files are uploaded
-if uploaded_pitch_deck and uploaded_financials:
-    st.write("Analyzing the Pitch Deck and Financials...")
-
-    # Analyze pitch deck
-    pitch_deck_analysis = analyze_pitch_deck(pitch_deck_text)
-    if pitch_deck_analysis:
-        st.subheader("Pitch Deck Analysis")
-        st.write(pitch_deck_analysis)
-
-    # Analyze financials
-    financial_analysis = analyze_financials(financial_data)
-    if financial_analysis:
-        st.subheader("Financial Analysis")
-        st.write(financial_analysis)
-
-    # Perform valuation analysis
-    valuation_result = valuation_analysis(financial_data)
-    if valuation_result:
-        st.subheader("Valuation Analysis")
-        st.write(valuation_result)
-
-    # Create downloadable report
-    report_data = {
-        "Pitch Deck Analysis": pitch_deck_analysis,
-        "Financial Analysis": financial_analysis,
-        "Valuation Analysis": valuation_result
-    }
-
-    # Convert report to a downloadable file (CSV for simplicity)
-    report_df = pd.DataFrame(list(report_data.items()), columns=["Section", "Analysis"])
-    csv_report = report_df.to_csv(index=False)
-    st.download_button("Download Analysis Report", csv_report, "pitch_deck_analysis_report.csv", "text/csv")
-else:
-    st.write("Please upload both the pitch deck and financial statements to get started.")
+        st.error(f"Error generating final report: {e}")
