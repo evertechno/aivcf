@@ -1,5 +1,7 @@
 streamlit
-google-generativeai
-PyPDF2
+supabase
 pandas
-openpyxl
+numpy
+scikit-learn
+plotly
+joblib
